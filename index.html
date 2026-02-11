@@ -84,18 +84,21 @@
             z-index: 9999; transition: 0.4s;
         }
         .toast.show { transform: translate(-50%, 0); }
+        .btn-secondary { background: #f1f5f9; color: #1e293b; border: 1px solid #e2e8f0; }
     </style>
 </head>
 <body>
 
 <div id="toast" class="toast">Сообщение</div>
 
-<div class="container">
-    <div id="screen-home" class="screen active">
+<div id="screen-home" class="screen active" style="display: block; opacity: 1;">
         <h1>🎓 Учи Термины</h1>
+        <p id="cloud-status" style="text-align:center; color:gray; font-size:0.8rem; margin-bottom: 20px;">Подключение к облаку...</p>
+        
         <button class="btn btn-primary" onclick="app.goToSubjectSelection()">Начать обучение</button>
         <button class="btn btn-outline" onclick="app.goToCreate()">Добавить в базу</button>
-        <button class="btn btn-secondary" style="background:#f1f5f9; color:#1e293b" onclick="app.goToManageDB()">База</button>
+        
+        <button class="btn btn-secondary" style="background:#f1f5f9; color:#1e293b; margin-top: 10px;" onclick="app.goToManageDB()">🗂️ База данных</button>
     </div>
 
     <div id="screen-create" class="screen">
