@@ -271,9 +271,18 @@
                         this.sessionCorrect++;
                         this.termResults[this.curr.t].ok++;
                     } else {
-                        b.classList.add('wrong');
-                        this.quizQueue.push(this.curr);
-                    }
+    // 1. Красим нажатую кнопку в красный
+    b.classList.add('wrong');
+    this.quizQueue.push(this.curr);
+
+    // 2. Ищем правильную кнопку и красим её в зеленый
+    const allOptions = opts.querySelectorAll('.opt');
+    allOptions.forEach(option => {
+        if (option.innerText === this.curr.d) {
+            option.classList.add('correct');
+        }
+    });
+}
                     next.style.display = 'block';
                     document.getElementById('q-progress').style.width = ((this.maxQ - this.quizQueue.length) / this.maxQ * 100) + '%';
                 };
