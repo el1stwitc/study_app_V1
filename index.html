@@ -3,13 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#f8fafc">
     <title>Учи Термины</title>
-    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
     <style>
         :root {
             --primary: #2563eb;
@@ -25,113 +20,64 @@
 
         body {
             background-color: var(--bg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 20px;
+            display: flex; align-items: center; justify-content: center;
+            min-height: 100vh; padding: 20px;
         }
 
         .container {
-            width: 100%;
-            max-width: 400px;
-            height: 85vh;
-            background: var(--white);
-            border-radius: var(--radius);
+            width: 100%; max-width: 400px; height: 85vh;
+            background: var(--white); border-radius: var(--radius);
             box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-            overflow-x: hidden;
-            overflow-y: auto;
+            padding: 1.5rem; display: flex; flex-direction: column;
+            position: relative; overflow: hidden;
         }
 
         .screen {
-            display: none;
-            width: 100%;
-            opacity: 0;
-            transform: translateX(20px);
-            transition: 0.3s ease;
+            display: none; width: 100%; opacity: 0; transform: translateX(20px);
+            transition: 0.3s ease; overflow-y: auto; height: 100%;
         }
-        .screen.active {
-            display: block;
-            opacity: 1;
-            transform: translateX(0);
-        }
+        .screen.active { display: block; opacity: 1; transform: translateX(0); }
 
         h1, h2 { text-align: center; margin-bottom: 1.5rem; color: var(--text); }
 
         .btn {
-            display: block;
-            width: 100%;
-            padding: 16px;
-            margin: 10px 0;
-            border: none;
-            border-radius: 15px;
-            font-size: 1rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: 0.2s;
-            text-align: center;
+            display: block; width: 100%; padding: 16px; margin: 10px 0;
+            border: none; border-radius: 15px; font-size: 1rem; font-weight: 700;
+            cursor: pointer; transition: 0.2s; text-align: center;
         }
-        .btn:active { transform: scale(0.96); opacity: 0.8; }
+        .btn:active { transform: scale(0.96); }
         .btn-primary { background: var(--primary); color: white; }
         .btn-outline { background: #eff6ff; color: var(--primary); }
         .btn-secondary { background: #f1f5f9; color: #64748b; }
 
-        input {
-            width: 100%;
-            padding: 14px;
-            margin-bottom: 10px;
-            border: 2px solid #f1f5f9;
-            border-radius: 12px;
-            font-size: 16px;
-        }
+        input { width: 100%; padding: 14px; margin-bottom: 10px; border: 2px solid #f1f5f9; border-radius: 12px; }
 
-        /* СТИЛИ КАРТОЧКИ И ОПЦИЙ */
         .card {
-            background: #eff6ff;
-            padding: 2rem;
-            border-radius: var(--radius);
-            text-align: center;
-            margin-bottom: 1.5rem;
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--primary);
-            border: 1px solid #dbeafe;
+            background: #eff6ff; padding: 2rem 1rem; border-radius: var(--radius);
+            text-align: center; margin-bottom: 1rem; font-size: 1.5rem;
+            font-weight: 800; color: var(--primary); border: 1px solid #dbeafe;
         }
 
         .option-btn {
-            background: white;
-            border: 2px solid #f1f5f9;
-            padding: 14px;
-            border-radius: 12px;
-            margin-bottom: 10px;
-            cursor: pointer;
-            transition: 0.2s;
-            animation: slideUp 0.3s ease forwards;
+            background: white; border: 2px solid #f1f5f9; padding: 12px 16px;
+            border-radius: 15px; margin-bottom: 8px; cursor: pointer; transition: 0.3s;
+            font-size: 0.95rem; line-height: 1.4; animation: slideUp 0.4s ease forwards; opacity: 0;
         }
         @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        .option-btn.correct { background: var(--success); color: white; border-color: var(--success); }
-        .option-btn.wrong { background: var(--error); color: white; border-color: var(--error); }
+        /* Цвета подсветки */
+        .option-btn.correct { background: var(--success) !important; color: white; border-color: var(--success); }
+        .option-btn.wrong { background: var(--error) !important; color: white; border-color: var(--error); }
+        .option-btn.other-wrong { background: #fee2e2; color: var(--error); border-color: #fecaca; opacity: 0.7; }
         .disabled { pointer-events: none; }
 
-        .progress-bar { height: 6px; background: #f1f5f9; border-radius: 10px; margin-bottom: 20px; overflow: hidden; }
+        .progress-bar { height: 6px; background: #f1f5f9; border-radius: 10px; margin-bottom: 15px; }
         .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: 0.4s; }
 
         .toast {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translate(-50%, -100px);
-            background: #1e293b;
-            color: white;
-            padding: 12px 20px;
-            border-radius: 50px;
-            z-index: 1000;
-            transition: 0.4s;
+            position: fixed; top: 40px; left: 50%; transform: translate(-50%, -100px);
+            background: #1e293b; color: white; padding: 12px 20px; border-radius: 50px;
+            z-index: 9999; transition: 0.4s;
         }
         .toast.show { transform: translate(-50%, 0); }
     </style>
@@ -141,9 +87,9 @@
 <div id="toast" class="toast">Сообщение</div>
 
 <div class="container">
-    <div id="screen-home" class="screen active" style="display: block; opacity: 1; transform: translateX(0);">
+    <div id="screen-home" class="screen active">
         <h1>🎓 Учи Термины</h1>
-        <p id="cloud-status" style="text-align:center; color:gray; font-size:0.8rem; margin-bottom: 20px;">Загрузка данных...</p>
+        <p id="cloud-status" style="text-align:center; color:gray; font-size:0.8rem; margin-bottom: 20px;">Загрузка...</p>
         <button class="btn btn-primary" onclick="app.goToSubjectSelection()">Начать обучение</button>
         <button class="btn btn-outline" onclick="app.goToCreate()">Создать базу</button>
     </div>
@@ -153,8 +99,8 @@
         <input type="text" id="inp-subject" placeholder="Предмет">
         <input type="text" id="inp-topic" placeholder="Тема">
         <div id="terms-container"></div>
-        <button class="btn btn-secondary" onclick="app.addTermRow()">+ Еще поле</button>
-        <button class="btn btn-primary" id="btn-save" onclick="app.saveData()">Сохранить в облако</button>
+        <button class="btn btn-secondary" onclick="app.addTermRow()">+ Термин</button>
+        <button class="btn btn-primary" id="btn-save" onclick="app.saveData()">Сохранить</button>
         <button class="btn btn-outline" onclick="app.switchScreen('screen-home')">Назад</button>
     </div>
 
@@ -172,52 +118,37 @@
 
     <div id="screen-quiz" class="screen">
         <div class="progress-bar"><div class="progress-fill" id="quiz-progress"></div></div>
-        <div class="card" id="quiz-term">Термин</div>
+        <div class="card" id="quiz-term">...</div>
         <div id="quiz-options"></div>
-        <button id="btn-continue" class="btn btn-primary" style="display:none;" onclick="app.nextQuestion()">Далее</button>
+        <button id="btn-continue" class="btn btn-primary" style="display:none; margin-top: 10px;" onclick="app.nextQuestion()">Продолжить</button>
     </div>
 
     <div id="screen-stats" class="screen">
-        <h2>Результат</h2>
-        <div style="font-size: 5rem; text-align:center; font-weight:900; color:var(--primary); margin: 1rem 0;" id="final-score">0</div>
+        <h2>Готово!</h2>
+        <div style="font-size: 4rem; text-align:center; font-weight:900; color:var(--primary); margin: 1rem 0;" id="final-score">0</div>
         <p id="final-percent" style="text-align:center; color:gray; margin-bottom:2rem;"></p>
-        <button class="btn btn-primary" onclick="app.switchScreen('screen-home')">К предметам</button>
+        <button class="btn btn-primary" onclick="app.switchScreen('screen-home')">На главную</button>
     </div>
 </div>
 
 <script>
     const SUPABASE_URL = 'https://irrxjckolvcktxigneaq.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlycnhqY2tvbHZja3R4aWduZWFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MTczNjgsImV4cCI6MjA4NjM5MzM2OH0.3Xa99p5pQO5vhQmtL9ucbazwpsqdVjKqmtraxWl0Rws';
-
-    let sb = (window.supabase)?.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     const app = {
         data: [],
-        quiz: { q: [], cur: 0, score: 0, allTerms: [] },
-
-        async init() {
-            if (sb) this.load();
-        },
+        quiz: { questions: [], currentIdx: 0, score: 0, allDefs: [] },
 
         async load() {
-            const { data, error } = await sb.from('study_sets').select('*').order('created_at', { ascending: false });
-            if (!error) {
-                this.data = data;
-                document.getElementById('cloud-status').innerText = 'Облако активно ☁️';
-            }
+            const { data } = await sb.from('study_sets').select('*');
+            if (data) { this.data = data; document.getElementById('cloud-status').innerText = 'Облако активно'; }
         },
 
         switchScreen(id) {
-            const screens = document.querySelectorAll('.screen');
-            screens.forEach(s => { s.classList.remove('active'); s.style.display = 'none'; });
+            document.querySelectorAll('.screen').forEach(s => { s.classList.remove('active'); s.style.display = 'none'; });
             const next = document.getElementById(id);
-            if (next) { next.style.display = 'block'; setTimeout(() => next.classList.add('active'), 50); }
-        },
-
-        goToCreate() {
-            document.getElementById('terms-container').innerHTML = '';
-            for(let i=0; i<3; i++) this.addTermRow();
-            this.switchScreen('screen-create');
+            next.style.display = 'block'; setTimeout(() => next.classList.add('active'), 50);
         },
 
         addTermRow() {
@@ -228,119 +159,98 @@
         },
 
         async saveData() {
-            const sub = document.getElementById('inp-subject').value.trim();
-            const top = document.getElementById('inp-topic').value.trim();
-            const terms = Array.from(document.querySelectorAll('#terms-container div')).map(row => ({
-                t: row.querySelector('.t').value.trim(),
-                d: row.querySelector('.d').value.trim()
+            const sub = document.getElementById('inp-subject').value;
+            const top = document.getElementById('inp-topic').value;
+            const terms = Array.from(document.querySelectorAll('#terms-container div')).map(r => ({
+                t: r.querySelector('.t').value, d: r.querySelector('.d').value
             })).filter(x => x.t && x.d);
-
-            if (!sub || !top || terms.length < 2) return this.notify('Минимум 2 термина!', true);
-
-            const btn = document.getElementById('btn-save');
-            btn.disabled = true; btn.innerText = 'Сохранение...';
-
-            const { error } = await sb.from('study_sets').insert([{ subject: sub, topic: top, terms }]);
-            
-            if (!error) {
-                this.notify('Успешно сохранено!');
-                await this.load();
-                this.switchScreen('screen-home');
-            }
-            btn.disabled = false; btn.innerText = 'Сохранить в облако';
+            await sb.from('study_sets').insert([{ subject: sub, topic: top, terms }]);
+            this.load(); this.switchScreen('screen-home');
         },
 
         goToSubjectSelection() {
-            if (!this.data.length) return this.notify('База пуста!', true);
-            const list = document.getElementById('subjects-list');
-            list.innerHTML = '';
+            const list = document.getElementById('subjects-list'); list.innerHTML = '';
             [...new Set(this.data.map(x => x.subject))].forEach(s => {
-                const b = document.createElement('button');
-                b.className = 'btn btn-outline'; b.innerText = s;
-                b.onclick = () => this.goToTopicSelection(s);
-                list.appendChild(b);
+                const b = document.createElement('button'); b.className = 'btn btn-outline'; b.innerText = s;
+                b.onclick = () => this.goToTopicSelection(s); list.appendChild(b);
             });
             this.switchScreen('screen-select-subject');
         },
 
-        goToTopicSelection(subject) {
-            const list = document.getElementById('topics-list');
-            list.innerHTML = '';
-            this.data.filter(x => x.subject === subject).forEach(item => {
-                const b = document.createElement('button');
-                b.className = 'btn btn-outline'; b.innerText = item.topic;
-                b.onclick = () => this.startQuiz(item);
-                list.appendChild(b);
+        goToTopicSelection(s) {
+            const list = document.getElementById('topics-list'); list.innerHTML = '';
+            this.data.filter(x => x.subject === s).forEach(i => {
+                const b = document.createElement('button'); b.className = 'btn btn-outline'; b.innerText = i.topic;
+                b.onclick = () => this.startQuiz(i); list.appendChild(b);
             });
             this.switchScreen('screen-select-topic');
         },
 
         startQuiz(item) {
-            let terms = [...item.terms].sort(() => Math.random() - 0.5);
-            let questions = [];
-            while(questions.length < 10) questions = questions.concat(terms);
-            
-            this.quiz = { 
-                q: questions.slice(0, 10), 
-                allTerms: item.terms, 
-                cur: 0, 
-                score: 0 
+            this.quiz = {
+                questions: [...item.terms].sort(() => Math.random() - 0.5),
+                currentIdx: 0, score: 0,
+                allDefs: item.terms.map(t => t.d)
             };
             this.switchScreen('screen-quiz');
-            this.renderQ();
+            this.renderQuestion();
         },
 
-        renderQ() {
-            const cur = this.quiz.q[this.quiz.cur];
+        renderQuestion() {
+            const cur = this.quiz.questions[this.quiz.currentIdx];
             document.getElementById('quiz-term').innerText = cur.t;
-            document.getElementById('quiz-progress').style.width = (this.quiz.cur / 10 * 100) + '%';
+            document.getElementById('quiz-progress').style.width = (this.quiz.currentIdx / this.quiz.questions.length * 100) + '%';
             document.getElementById('btn-continue').style.display = 'none';
 
             const optBox = document.getElementById('quiz-options');
             optBox.innerHTML = '';
 
-            // Генерируем варианты (правильный + 3 случайных)
-            let opts = [cur.d];
-            let others = this.quiz.allTerms.filter(x => x.d !== cur.d).map(x => x.d);
-            opts = opts.concat(others.sort(() => Math.random() - 0.5).slice(0, 3)).sort(() => Math.random() - 0.5);
-
-            opts.forEach(o => {
+            let opts = [cur.d, ...this.quiz.allDefs.filter(d => d !== cur.d).sort(() => Math.random() - 0.5).slice(0, 4)];
+            opts.sort(() => Math.random() - 0.5).forEach((o, i) => {
                 const b = document.createElement('div');
                 b.className = 'option-btn'; b.innerText = o;
-                b.onclick = () => this.check(b, o, cur.d);
+                b.style.animationDelay = (i * 0.05) + 's';
+                b.onclick = () => this.checkAnswer(b, o, cur.d);
                 optBox.appendChild(b);
             });
         },
 
-        check(btn, sel, cor) {
-            document.querySelectorAll('.option-btn').forEach(b => b.classList.add('disabled'));
-            if(sel === cor) {
-                btn.classList.add('correct'); this.quiz.score++;
+        checkAnswer(btn, selected, correct) {
+            const allBtns = document.querySelectorAll('.option-btn');
+            allBtns.forEach(b => b.classList.add('disabled'));
+
+            if (selected === correct) {
+                btn.classList.add('correct');
+                this.quiz.score++;
             } else {
                 btn.classList.add('wrong');
-                document.querySelectorAll('.option-btn').forEach(b => { if(b.innerText === cor) b.classList.add('correct'); });
+                allBtns.forEach(b => {
+                    if (b.innerText === correct) b.classList.add('correct');
+                    else if (b !== btn) b.classList.add('other-wrong');
+                });
             }
             document.getElementById('btn-continue').style.display = 'block';
         },
 
         nextQuestion() {
-            this.quiz.cur++;
-            if(this.quiz.cur < 10) this.renderQ();
+            this.quiz.currentIdx++;
+            if (this.quiz.currentIdx < this.quiz.questions.length) this.renderQuestion();
             else {
-                document.getElementById('final-score').innerText = this.quiz.score + '/10';
-                document.getElementById('final-percent').innerText = (this.quiz.score * 10) + '% успеха';
+                document.getElementById('final-score').innerText = `${this.quiz.score}/${this.quiz.questions.length}`;
                 this.switchScreen('screen-stats');
             }
         },
 
-        notify(msg, err = false) {
-            const t = document.getElementById('toast');
-            t.innerText = msg; t.style.background = err ? 'var(--error)' : '#1e293b';
-            t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000);
+        notify(m) { const t = document.getElementById('toast'); t.innerText = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000); },
+
+        goToCreate() {
+            document.getElementById('terms-container').innerHTML = '';
+            for(let i=0; i<3; i++) this.addTermRow();
+            this.switchScreen('screen-create');
         }
     };
 
-    window.onload = () => app.init();
+    window.onload = () => app.load();
 </script>
 </body>
 </html>
