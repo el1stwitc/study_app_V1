@@ -18,11 +18,7 @@
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
 
-        body {
-            background-color: var(--bg);
-            display: flex; align-items: center; justify-content: center;
-            min-height: 100vh; padding: 20px;
-        }
+        body { background-color: var(--bg); display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
 
         .container {
             width: 100%; max-width: 400px; height: 85vh;
@@ -34,8 +30,9 @@
 
         .screen {
             display: none; width: 100%; opacity: 0; transform: translateX(20px);
-            transition: 0.3s ease; overflow-y: auto; height: 100%;
+            transition: 0.3s ease; overflow-y: auto; height: 100%; padding-bottom: 20px;
         }
+        .screen::-webkit-scrollbar { display: none; }
         .screen.active { display: block; opacity: 1; transform: translateX(0); }
 
         h1, h2 { text-align: center; margin-bottom: 1.5rem; color: var(--text); }
@@ -48,27 +45,34 @@
         .btn:active { transform: scale(0.96); }
         .btn-primary { background: var(--primary); color: white; }
         .btn-outline { background: #eff6ff; color: var(--primary); }
-        .btn-secondary { background: #f1f5f9; color: #64748b; }
+        .btn-danger { background: #fee2e2; color: var(--error); font-size: 0.8rem; padding: 8px; }
 
         input { width: 100%; padding: 14px; margin-bottom: 10px; border: 2px solid #f1f5f9; border-radius: 12px; }
 
+        /* Стили для списка управления базой */
+        .db-item {
+            background: #f8fafc; padding: 15px; border-radius: 15px;
+            margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;
+            border: 1px solid #e2e8f0;
+        }
+        .db-info b { display: block; color: var(--text); }
+        .db-info span { font-size: 0.8rem; color: #64748b; }
+        .db-actions { display: flex; gap: 8px; }
+        .btn-icon { padding: 10px; border-radius: 10px; border: none; cursor: pointer; }
+
+        /* Квиз и опции */
         .card {
             background: #eff6ff; padding: 2rem 1rem; border-radius: var(--radius);
             text-align: center; margin-bottom: 1rem; font-size: 1.5rem;
             font-weight: 800; color: var(--primary); border: 1px solid #dbeafe;
         }
-
         .option-btn {
-            background: white; border: 2px solid #f1f5f9; padding: 12px 16px;
+            background: white; border: 2px solid #f1f5f9; padding: 12px;
             border-radius: 15px; margin-bottom: 8px; cursor: pointer; transition: 0.3s;
-            font-size: 0.95rem; line-height: 1.4; animation: slideUp 0.4s ease forwards; opacity: 0;
         }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        /* Цвета подсветки */
         .option-btn.correct { background: var(--success) !important; color: white; border-color: var(--success); }
         .option-btn.wrong { background: var(--error) !important; color: white; border-color: var(--error); }
-        .option-btn.other-wrong { background: #fee2e2; color: var(--error); border-color: #fecaca; opacity: 0.7; }
+        .option-btn.other-wrong { background: #fee2e2; color: var(--error); opacity: 0.6; }
         .disabled { pointer-events: none; }
 
         .progress-bar { height: 6px; background: #f1f5f9; border-radius: 10px; margin-bottom: 15px; }
@@ -89,13 +93,13 @@
 <div class="container">
     <div id="screen-home" class="screen active">
         <h1>🎓 Учи Термины</h1>
-        <p id="cloud-status" style="text-align:center; color:gray; font-size:0.8rem; margin-bottom: 20px;">Загрузка...</p>
         <button class="btn btn-primary" onclick="app.goToSubjectSelection()">Начать обучение</button>
-        <button class="btn btn-outline" onclick="app.goToCreate()">Создать базу</button>
+        <button class="btn btn-outline" onclick="app.goToCreate()">Добавить в базу</button>
+        <button class="btn btn-secondary" style="background:#f1f5f9; color:#1e293b" onclick="app.goToManageDB()">База</button>
     </div>
 
     <div id="screen-create" class="screen">
-        <h2>Новая база</h2>
+        <h2 id="create-title">Новая тема</h2>
         <input type="text" id="inp-subject" placeholder="Предмет">
         <input type="text" id="inp-topic" placeholder="Тема">
         <div id="terms-container"></div>
@@ -104,30 +108,26 @@
         <button class="btn btn-outline" onclick="app.switchScreen('screen-home')">Назад</button>
     </div>
 
-    <div id="screen-select-subject" class="screen">
-        <h2>Предметы</h2>
-        <div id="subjects-list"></div>
+    <div id="screen-manage" class="screen">
+        <h2>Управление базой</h2>
+        <div id="db-list"></div>
         <button class="btn btn-outline" onclick="app.switchScreen('screen-home')">Назад</button>
     </div>
 
-    <div id="screen-select-topic" class="screen">
-        <h2>Темы</h2>
-        <div id="topics-list"></div>
-        <button class="btn btn-outline" onclick="app.switchScreen('screen-select-subject')">Назад</button>
-    </div>
+    <div id="screen-select-subject" class="screen"><h2>Предметы</h2><div id="subjects-list"></div><button class="btn btn-outline" onclick="app.switchScreen('screen-home')">Назад</button></div>
+    <div id="screen-select-topic" class="screen"><h2>Темы</h2><div id="topics-list"></div><button class="btn btn-outline" onclick="app.switchScreen('screen-select-subject')">Назад</button></div>
 
     <div id="screen-quiz" class="screen">
         <div class="progress-bar"><div class="progress-fill" id="quiz-progress"></div></div>
         <div class="card" id="quiz-term">...</div>
         <div id="quiz-options"></div>
-        <button id="btn-continue" class="btn btn-primary" style="display:none; margin-top: 10px;" onclick="app.nextQuestion()">Продолжить</button>
+        <button id="btn-continue" class="btn btn-primary" style="display:none;" onclick="app.nextQuestion()">Продолжить</button>
     </div>
 
     <div id="screen-stats" class="screen">
-        <h2>Готово!</h2>
+        <h2>Результат</h2>
         <div style="font-size: 4rem; text-align:center; font-weight:900; color:var(--primary); margin: 1rem 0;" id="final-score">0</div>
-        <p id="final-percent" style="text-align:center; color:gray; margin-bottom:2rem;"></p>
-        <button class="btn btn-primary" onclick="app.switchScreen('screen-home')">На главную</button>
+        <button class="btn btn-primary" onclick="app.switchScreen('screen-home')">Домой</button>
     </div>
 </div>
 
@@ -138,11 +138,12 @@
 
     const app = {
         data: [],
+        editingId: null, // ID редактируемой темы
         quiz: { questions: [], currentIdx: 0, score: 0, allDefs: [] },
 
         async load() {
-            const { data } = await sb.from('study_sets').select('*');
-            if (data) { this.data = data; document.getElementById('cloud-status').innerText = 'Облако активно'; }
+            const { data } = await sb.from('study_sets').select('*').order('created_at', { ascending: false });
+            if (data) this.data = data;
         },
 
         switchScreen(id) {
@@ -151,23 +152,100 @@
             next.style.display = 'block'; setTimeout(() => next.classList.add('active'), 50);
         },
 
-        addTermRow() {
+        addTermRow(t = '', d = '') {
             const div = document.createElement('div');
-            div.style.display = 'flex'; div.style.gap = '5px';
-            div.innerHTML = `<input type="text" class="t" placeholder="Слово" style="flex:1"><input type="text" class="d" placeholder="Определение" style="flex:1">`;
+            div.style.display = 'flex'; div.style.gap = '5px'; div.style.marginBottom = '5px';
+            div.innerHTML = `<input type="text" class="t" placeholder="Слово" value="${t}" style="flex:1"><input type="text" class="d" placeholder="Определение" value="${d}" style="flex:1">`;
             document.getElementById('terms-container').appendChild(div);
         },
 
+        // --- СОХРАНЕНИЕ (И СОЗДАНИЕ И ОБНОВЛЕНИЕ) ---
         async saveData() {
-            const sub = document.getElementById('inp-subject').value;
-            const top = document.getElementById('inp-topic').value;
+            const sub = document.getElementById('inp-subject').value.trim();
+            const top = document.getElementById('inp-topic').value.trim();
             const terms = Array.from(document.querySelectorAll('#terms-container div')).map(r => ({
-                t: r.querySelector('.t').value, d: r.querySelector('.d').value
+                t: r.querySelector('.t').value.trim(), d: r.querySelector('.d').value.trim()
             })).filter(x => x.t && x.d);
-            await sb.from('study_sets').insert([{ subject: sub, topic: top, terms }]);
-            this.load(); this.switchScreen('screen-home');
+
+            if (!sub || !top || terms.length < 2) return this.notify('Заполните всё!', true);
+
+            const btn = document.getElementById('btn-save');
+            btn.disabled = true;
+
+            let error;
+            if (this.editingId) {
+                // Обновляем существующую
+                const { error: err } = await sb.from('study_sets').update({ subject: sub, topic: top, terms }).eq('id', this.editingId);
+                error = err;
+            } else {
+                // Создаем новую
+                const { error: err } = await sb.from('study_sets').insert([{ subject: sub, topic: top, terms }]);
+                error = err;
+            }
+
+            if (!error) {
+                this.notify('Успешно!');
+                await this.load();
+                this.switchScreen('screen-home');
+            }
+            btn.disabled = false;
         },
 
+        // --- УПРАВЛЕНИЕ БАЗОЙ ---
+        goToManageDB() {
+            const list = document.getElementById('db-list');
+            list.innerHTML = '';
+            this.data.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'db-item';
+                div.innerHTML = `
+                    <div class="db-info"><b>${item.topic}</b><span>${item.subject} (${item.terms.length})</span></div>
+                    <div class="db-actions">
+                        <button class="btn-icon" style="background:#dcfce7" onclick="app.editSet('${item.id}')">✏️</button>
+                        <button class="btn-icon" style="background:#fee2e2" onclick="app.deleteSet('${item.id}')">🗑️</button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+            this.switchScreen('screen-manage');
+        },
+
+        async deleteSet(id) {
+            if (confirm('Удалить эту тему навсегда?')) {
+                const { error } = await sb.from('study_sets').delete().eq('id', id);
+                if (!error) {
+                    this.notify('Удалено');
+                    await this.load();
+                    this.goToManageDB();
+                }
+            }
+        },
+
+        editSet(id) {
+            const item = this.data.find(x => x.id == id);
+            if (!item) return;
+
+            this.editingId = id;
+            document.getElementById('create-title').innerText = 'Редактирование';
+            document.getElementById('inp-subject').value = item.subject;
+            document.getElementById('inp-topic').value = item.topic;
+            document.getElementById('terms-container').innerHTML = '';
+            item.terms.forEach(t => this.addTermRow(t.t, t.d));
+            
+            this.switchScreen('screen-create');
+        },
+
+        goToCreate() {
+            this.editingId = null;
+            document.getElementById('create-title').innerText = 'Новая тема';
+            document.getElementById('inp-subject').value = '';
+            document.getElementById('inp-topic').value = '';
+            document.getElementById('terms-container').innerHTML = '';
+            for(let i=0; i<3; i++) this.addTermRow();
+            this.switchScreen('screen-create');
+        },
+
+        // --- КВИЗ (ОСТАЛСЯ БЕЗ ИЗМЕНЕНИЙ) ---
         goToSubjectSelection() {
             const list = document.getElementById('subjects-list'); list.innerHTML = '';
             [...new Set(this.data.map(x => x.subject))].forEach(s => {
@@ -187,11 +265,7 @@
         },
 
         startQuiz(item) {
-            this.quiz = {
-                questions: [...item.terms].sort(() => Math.random() - 0.5),
-                currentIdx: 0, score: 0,
-                allDefs: item.terms.map(t => t.d)
-            };
+            this.quiz = { questions: [...item.terms].sort(() => Math.random() - 0.5), currentIdx: 0, score: 0, allDefs: item.terms.map(t => t.d) };
             this.switchScreen('screen-quiz');
             this.renderQuestion();
         },
@@ -201,31 +275,22 @@
             document.getElementById('quiz-term').innerText = cur.t;
             document.getElementById('quiz-progress').style.width = (this.quiz.currentIdx / this.quiz.questions.length * 100) + '%';
             document.getElementById('btn-continue').style.display = 'none';
-
-            const optBox = document.getElementById('quiz-options');
-            optBox.innerHTML = '';
-
+            const optBox = document.getElementById('quiz-options'); optBox.innerHTML = '';
             let opts = [cur.d, ...this.quiz.allDefs.filter(d => d !== cur.d).sort(() => Math.random() - 0.5).slice(0, 4)];
-            opts.sort(() => Math.random() - 0.5).forEach((o, i) => {
-                const b = document.createElement('div');
-                b.className = 'option-btn'; b.innerText = o;
-                b.style.animationDelay = (i * 0.05) + 's';
-                b.onclick = () => this.checkAnswer(b, o, cur.d);
-                optBox.appendChild(b);
+            opts.sort(() => Math.random() - 0.5).forEach(o => {
+                const b = document.createElement('div'); b.className = 'option-btn'; b.innerText = o;
+                b.onclick = () => this.checkAnswer(b, o, cur.d); optBox.appendChild(b);
             });
         },
 
         checkAnswer(btn, selected, correct) {
             const allBtns = document.querySelectorAll('.option-btn');
             allBtns.forEach(b => b.classList.add('disabled'));
-
-            if (selected === correct) {
-                btn.classList.add('correct');
-                this.quiz.score++;
-            } else {
+            if (selected === correct) { btn.classList.add('correct'); this.quiz.score++; }
+            else {
                 btn.classList.add('wrong');
-                allBtns.forEach(b => {
-                    if (b.innerText === correct) b.classList.add('correct');
+                allBtns.forEach(b => { 
+                    if (b.innerText === correct) b.classList.add('correct'); 
                     else if (b !== btn) b.classList.add('other-wrong');
                 });
             }
@@ -235,19 +300,10 @@
         nextQuestion() {
             this.quiz.currentIdx++;
             if (this.quiz.currentIdx < this.quiz.questions.length) this.renderQuestion();
-            else {
-                document.getElementById('final-score').innerText = `${this.quiz.score}/${this.quiz.questions.length}`;
-                this.switchScreen('screen-stats');
-            }
+            else { document.getElementById('final-score').innerText = `${this.quiz.score}/${this.quiz.questions.length}`; this.switchScreen('screen-stats'); }
         },
 
-        notify(m) { const t = document.getElementById('toast'); t.innerText = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000); },
-
-        goToCreate() {
-            document.getElementById('terms-container').innerHTML = '';
-            for(let i=0; i<3; i++) this.addTermRow();
-            this.switchScreen('screen-create');
-        }
+        notify(m) { const t = document.getElementById('toast'); t.innerText = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000); }
     };
 
     window.onload = () => app.load();
