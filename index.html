@@ -1,12 +1,383 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Обучение — Термины и Определения</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Учи Термины</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --bg: #f8fafc;
+            --white: #ffffff;
+            --text: #1e293b;
+            --success: #22c55e;
+            --error: #ef4444;
+            --radius: 12px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            padding: 2rem;
+            position: relative;
+            align-self: flex-start;
+            margin-top: 5vh;
+        }
+
+        h1, h2 { text-align: center; color: var(--primary); margin-bottom: 1.5rem; }
+        
+        .screen { display: none; opacity: 0; transition: opacity 0.3s ease; }
+        .screen.active { display: block; opacity: 1; }
+
+        /* Buttons */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            margin: 10px 0;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s, background 0.2s;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-primary:active { transform: scale(0.98); }
+        .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
+        .btn-secondary { background: #e2e8f0; color: #475569; }
+
+        /* Inputs */
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        input:focus { outline: 2px solid var(--primary); border-color: transparent; }
+
+        /* Create Screen */
+        .term-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; animation: slideIn 0.3s ease; }
+        
+        /* Quiz Styles */
+        .progress-bar {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .card {
+            background: #f1f5f9;
+            padding: 2rem;
+            border-radius: var(--radius);
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-dark);
+        }
+
+        .options-grid { display: flex; flex-direction: column; gap: 10px; }
+        .option-btn {
+            background: white;
+            border: 2px solid #e2e8f0;
+            padding: 15px;
+            border-radius: var(--radius);
+            text-align: left;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .option-btn:hover { border-color: var(--primary); }
+        .option-btn.correct { background: var(--success); color: white; border-color: var(--success); }
+        .option-btn.wrong { background: var(--error); color: white; border-color: var(--error); }
+        .disabled { pointer-events: none; opacity: 0.9; }
+
+        /* Stats */
+        .big-score { font-size: 4rem; font-weight: bold; color: var(--primary); text-align: center; display: block; margin: 2rem 0; }
+
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="screen-home" class="screen active">
+        <h1>🎓 Учи Термины</h1>
+        <p style="text-align:center; color:#64748b; margin-bottom: 2rem;">Создавай свои базы знаний и тренируйся в удобном формате.</p>
+        <button class="btn btn-primary" onclick="app.goToSubjectSelection()">Начать обучение</button>
+        <button class="btn btn-outline" onclick="app.goToCreate()">Добавить базу знаний</button>
+    </div>
+
+    <div id="screen-create" class="screen">
+        <h2>Новая база</h2>
+        <input type="text" id="inp-subject" placeholder="Название предмета (например: История)">
+        <input type="text" id="inp-topic" placeholder="Название темы (например: Древний Рим)">
+        
+        <div style="margin: 20px 0; border-top: 1px solid #e2e8f0; padding-top:10px;">
+            <div id="terms-container"></div>
+            <button class="btn btn-secondary" style="margin-top:10px;" onclick="app.addTermRow()">+ Добавить термин</button>
+        </div>
+
+        <button class="btn btn-primary" onclick="app.saveData()">Сохранить базу</button>
+        <button class="btn btn-outline" onclick="app.showScreen('screen-home')">Назад</button>
+    </div>
+
+    <div id="screen-select-subject" class="screen">
+        <h2>Выберите предмет</h2>
+        <div id="subjects-list"></div>
+        <button class="btn btn-outline" style="margin-top:20px;" onclick="app.showScreen('screen-home')">Назад</button>
+    </div>
+
+    <div id="screen-select-topic" class="screen">
+        <h2>Выберите тему</h2>
+        <p id="selected-subject-display" style="text-align:center; color:gray; margin-bottom:1rem;"></p>
+        <div id="topics-list"></div>
+        <button class="btn btn-outline" style="margin-top:20px;" onclick="app.showScreen('screen-select-subject')">Назад</button>
+    </div>
+
+    <div id="screen-quiz" class="screen">
+        <div class="progress-bar"><div class="progress-fill" id="quiz-progress"></div></div>
+        <div style="text-align: right; color: gray; margin-bottom: 5px;" id="question-count">1/10</div>
+        
+        <div class="card" id="quiz-term">Термин</div>
+        
+        <div class="options-grid" id="quiz-options"></div>
+        
+        <button id="btn-continue" class="btn btn-primary" style="margin-top: 20px; display: none;" onclick="app.nextQuestion()">Продолжить</button>
+        <button class="btn btn-secondary" style="margin-top: 10px;" onclick="app.showScreen('screen-home')">Прервать</button>
+    </div>
+
+    <div id="screen-stats" class="screen">
+        <h2>Результат</h2>
+        <span class="big-score" id="final-score">0/10</span>
+        <p style="text-align: center; margin-bottom: 2rem;" id="final-percent">0%</p>
+        <button class="btn btn-primary" onclick="app.showScreen('screen-home')">На главную</button>
+    </div>
+</div>
+
+<script>
+    const app = {
+        data: JSON.parse(localStorage.getItem('studyAppDB')) || [],
+        quizState: {
+            questions: [],
+            currentIdx: 0,
+            score: 0
+        },
+
+        init() {
+            this.showScreen('screen-home');
+        },
+
+        showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        },
+
+        // --- ЛОГИКА СОЗДАНИЯ ---
+        goToCreate() {
+            document.getElementById('inp-subject').value = '';
+            document.getElementById('inp-topic').value = '';
+            document.getElementById('terms-container').innerHTML = '';
+            for(let i=0; i<5; i++) this.addTermRow();
+            this.showScreen('screen-create');
+        },
+
+        addTermRow() {
+            const div = document.createElement('div');
+            div.className = 'term-row';
+            div.innerHTML = `
+                <input type="text" class="inp-term" placeholder="Термин">
+                <input type="text" class="inp-def" placeholder="Определение">
+            `;
+            document.getElementById('terms-container').appendChild(div);
+        },
+
+        saveData() {
+            const subject = document.getElementById('inp-subject').value.trim();
+            constKPtopic = document.getElementById('inp-topic').value.trim();
+            const rows = document.querySelectorAll('.term-row');
+            const terms = [];
+
+            rows.forEach(row => {
+                const t = row.querySelector('.inp-term').value.trim();
+                const d = row.querySelector('.inp-def').value.trim();
+                if(t && d) terms.push({ t, d });
+            });
+
+            if(!subject || !constKPtopic || terms.length < 2) {
+                alert('Пожалуйста, заполните предмет, тему и минимум 2 термина.');
+                return;
+            }
+
+            // Добавляем в базу
+            this.data.push({ subject, topic: constKPtopic, terms });
+            localStorage.setItem('studyAppDB', JSON.stringify(this.data));
+            alert('Сохранено!');
+            this.showScreen('screen-home');
+        },
+
+        // --- ЛОГИКА ВЫБОРА ---
+        goToSubjectSelection() {
+            if(this.data.length === 0) {
+                alert('Сначала создайте хотя бы одну базу знаний!');
+                return;
+            }
+            const list = document.getElementById('subjects-list');
+            list.innerHTML = '';
+            // Получаем уникальные предметы
+            const subjects = [...new Set(this.data.map(i => i.subject))];
+            
+            subjects.forEach(sub => {
+                const btn = document.createElement('button');
+                btn.className = 'btn btn-outline';
+                btn.innerText = sub;
+                btn.onclick = () => this.goToTopicSelection(sub);
+                list.appendChild(btn);
+            });
+            this.showScreen('screen-select-subject');
+        },
+
+        goToTopicSelection(subject) {
+            document.getElementById('selected-subject-display').innerText = subject;
+            const list = document.getElementById('topics-list');
+            list.innerHTML = '';
+            
+            // Фильтруем темы по предмету
+            const topics = this.data.filter(i => i.subject === subject);
+            
+            topics.forEach(item => {
+                const btn = document.createElement('button');
+                btn.className = 'btn btn-outline';
+                btn.innerText = item.topic + ` (${item.terms.length} терм.)`;
+                btn.onclick = () => this.startQuiz(item);
+                list.appendChild(btn);
+            });
+            this.showScreen('screen-select-topic');
+        },
+
+        // --- ЛОГИКА ОБУЧЕНИЯ (КВИЗ) ---
+        startQuiz(topicData) {
+            // Подготовка вопросов (10 шт или сколько есть)
+            let terms = [...topicData.terms];
+            // Перемешиваем исходный массив
+            terms.sort(() => Math.random() - 0.5);
+            
+            // Берем 10 штук, если меньше — повторяем, пока не наберется 10
+            let questions = [];
+            while(questions.length < 10) {
+                questions = questions.concat(terms);
+            }
+            questions = questions.slice(0, 10);
+
+            this.quizState = {
+                questions: questions,
+                allTerms: topicData.terms, // нужны для неверных вариантов
+                currentIdx: 0,
+                score: 0
+            };
+            
+            this.showScreen('screen-quiz');
+            this.renderQuestion();
+        },
+
+        renderQuestion() {
+            const state = this.quizState;
+            const currentQ = state.questions[state.currentIdx];
+            
+            // UI обновления
+            document.getElementById('question-count').innerText = `${state.currentIdx + 1} / 10`;
+            document.getElementById('quiz-progress').style.width = `${(state.currentIdx / 10) * 100}%`;
+            document.getElementById('quiz-term').innerText = currentQ.t;
+            document.getElementById('btn-continue').style.display = 'none';
+
+            const optionsDiv = document.getElementById('quiz-options');
+            optionsDiv.innerHTML = '';
+
+            // Генерируем варианты (1 правильный + 4 неправильных)
+            let options = [currentQ.d];
+            let distractors = state.allTerms
+                .filter(t => t.d !== currentQ.d)
+                .map(t => t.d)
+                .sort(() => Math.random() - 0.5)
+                .slice(0, 4);
+            
+            options = options.concat(distractors);
+            options.sort(() => Math.random() - 0.5); // Мешаем варианты местами
+
+            options.forEach(optText => {
+                const btn = document.createElement('div');
+                btn.className = 'option-btn';
+                btn.innerText = optText;
+                btn.onclick = () => this.handleAnswer(btn, optText, currentQ.d);
+                optionsDiv.appendChild(btn);
+            });
+        },
+
+        handleAnswer(btn, selected, correct) {
+            // Блокируем все кнопки
+            const allBtns = document.querySelectorAll('.option-btn');
+            allBtns.forEach(b => b.classList.add('disabled'));
+
+            if(selected === correct) {
+                btn.classList.add('correct');
+                this.quizState.score++;
+            } else {
+                btn.classList.add('wrong');
+                // Подсветить правильный
+                allBtns.forEach(b => {
+                    if(b.innerText === correct) b.classList.add('correct');
+                });
+            }
+            
+            document.getElementById('btn-continue').style.display = 'block';
+        },
+
+        nextQuestion() {
+            this.quizState.currentIdx++;
+            if(this.quizState.currentIdx < 10) {
+                this.renderQuestion();
+            } else {
+                this.showStats();
+            }
+        },
+
+        showStats() {
+            this.showScreen('screen-stats');
+            const score = this.quizState.score;
+            document.getElementById('final-score').innerText = `${score} / 10`;
+            document.getElementById('final-percent').innerText = `${score * 10}% правильных ответов`;
+        }
+    };
+
+    // Старт
+    app.init();
+</script>
+
+</body>
 </html>
