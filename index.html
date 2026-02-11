@@ -2,8 +2,12 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#f8fafc">
     <title>Учи Термины</title>
+    
     <style>
         :root {
             --primary: #2563eb;
@@ -13,10 +17,11 @@
             --text: #1e293b;
             --success: #22c55e;
             --error: #ef4444;
-            --radius: 12px;
+            --radius: 16px; /* Закругления больше, как в iOS */
+            --shadow: 0 4px 20px rgba(0,0,0,0.08);
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
 
         body {
             background-color: var(--bg);
@@ -25,6 +30,9 @@
             justify-content: center;
             min-height: 100vh;
             padding: 20px;
+            /* Отступ сверху для iPhone челки, если добавлено на домашний экран */
+            padding-top: env(safe-area-inset-top, 20px); 
+            padding-bottom: env(safe-area-inset-bottom, 20px);
         }
 
         .container {
@@ -32,112 +40,151 @@
             max-width: 600px;
             background: var(--white);
             border-radius: var(--radius);
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-            padding: 2rem;
+            box-shadow: var(--shadow);
+            padding: 1.5rem;
             position: relative;
             align-self: flex-start;
-            margin-top: 5vh;
+            margin-top: 2vh;
+            overflow: hidden; /* Чтобы анимации не ломали верстку */
         }
 
-        h1, h2 { text-align: center; color: var(--primary); margin-bottom: 1.5rem; }
+        h1, h2 { text-align: center; color: var(--text); margin-bottom: 1.5rem; font-weight: 700; }
+        h1 { color: var(--primary); }
         
-        .screen { display: none; opacity: 0; transition: opacity 0.3s ease; }
-        .screen.active { display: block; opacity: 1; }
+        /* --- АНИМАЦИИ ЭКРАНОВ --- */
+        .screen {
+            display: none;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .screen.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
 
-        /* Buttons */
+        /* --- КНОПКИ (iOS style) --- */
         .btn {
             display: block;
             width: 100%;
-            padding: 14px;
-            margin: 10px 0;
+            padding: 16px;
+            margin: 12px 0;
             border: none;
-            border-radius: var(--radius);
-            font-size: 1rem;
+            border-radius: 12px;
+            font-size: 1.1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: transform 0.1s, background 0.2s;
+            transition: transform 0.1s, opacity 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
+        .btn:active { transform: scale(0.96); }
+        
         .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover { background: var(--primary-dark); }
-        .btn-primary:active { transform: scale(0.98); }
-        .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
-        .btn-secondary { background: #e2e8f0; color: #475569; }
+        .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); box-shadow: none; }
+        .btn-secondary { background: #f1f5f9; color: #475569; }
 
-        /* Inputs */
+        /* --- ПОЛЯ ВВОДА --- */
         input {
             width: 100%;
-            padding: 12px;
-            margin-bottom: 10px;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            font-size: 1rem;
+            padding: 14px;
+            margin-bottom: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 16px; /* ВАЖНО: 16px предотвращает зум на iPhone */
+            background: #f8fafc;
+            transition: 0.2s;
         }
-        input:focus { outline: 2px solid var(--primary); border-color: transparent; }
+        input:focus { outline: none; border-color: var(--primary); background: white; }
 
         /* Create Screen */
-        .term-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; animation: slideIn 0.3s ease; }
-        
+        .term-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; animation: slideInRow 0.3s ease; }
+        @keyframes slideInRow { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+
         /* Quiz Styles */
-        .progress-bar {
-            height: 8px;
-            background: #e2e8f0;
-            border-radius: 4px;
-            margin-bottom: 20px;
-            overflow: hidden;
-        }
-        .progress-fill {
-            height: 100%;
-            background: var(--primary);
-            width: 0%;
-            transition: width 0.3s ease;
-        }
+        .progress-bar { height: 6px; background: #e2e8f0; border-radius: 10px; margin-bottom: 20px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
         
         .card {
-            background: #f1f5f9;
+            background: #eff6ff;
             padding: 2rem;
             border-radius: var(--radius);
             text-align: center;
             margin-bottom: 1.5rem;
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             font-weight: bold;
             color: var(--primary-dark);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
         }
 
-        .options-grid { display: flex; flex-direction: column; gap: 10px; }
+        .options-grid { display: flex; flex-direction: column; gap: 12px; }
         .option-btn {
             background: white;
-            border: 2px solid #e2e8f0;
-            padding: 15px;
-            border-radius: var(--radius);
+            border: 2px solid #f1f5f9;
+            padding: 16px;
+            border-radius: 12px;
             text-align: left;
             cursor: pointer;
             transition: 0.2s;
+            font-size: 1rem;
+            -webkit-user-select: none; /* Чтобы не выделялся текст при тапе */
         }
-        .option-btn:hover { border-color: var(--primary); }
+        .option-btn:active { background: #f8fafc; }
         .option-btn.correct { background: var(--success); color: white; border-color: var(--success); }
         .option-btn.wrong { background: var(--error); color: white; border-color: var(--error); }
-        .disabled { pointer-events: none; opacity: 0.9; }
+        .disabled { pointer-events: none; opacity: 0.8; }
 
         /* Stats */
-        .big-score { font-size: 4rem; font-weight: bold; color: var(--primary); text-align: center; display: block; margin: 2rem 0; }
+        .big-score { font-size: 5rem; font-weight: 800; color: var(--primary); text-align: center; display: block; margin: 2rem 0; letter-spacing: -2px; }
 
-        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* --- CUSTOM NOTIFICATION (TOAST) --- */
+        #notification-area {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            width: 90%;
+            max-width: 400px;
+            pointer-events: none;
+        }
+        .toast {
+            background: #1e293b;
+            color: white;
+            padding: 16px 20px;
+            border-radius: 50px;
+            margin-bottom: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+        }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--error); }
+
     </style>
 </head>
 <body>
 
+<div id="notification-area"></div>
+
 <div class="container">
     <div id="screen-home" class="screen active">
         <h1>🎓 Учи Термины</h1>
-        <p style="text-align:center; color:#64748b; margin-bottom: 2rem;">Создавай свои базы знаний и тренируйся в удобном формате.</p>
+        <p style="text-align:center; color:#64748b; margin-bottom: 2rem; font-size: 0.95rem;">Тренируй память в любом месте. <br>Добавь на экран «Домой».</p>
         <button class="btn btn-primary" onclick="app.goToSubjectSelection()">Начать обучение</button>
         <button class="btn btn-outline" onclick="app.goToCreate()">Добавить базу знаний</button>
     </div>
 
     <div id="screen-create" class="screen">
         <h2>Новая база</h2>
-        <input type="text" id="inp-subject" placeholder="Название предмета (например: История)">
-        <input type="text" id="inp-topic" placeholder="Название темы (например: Древний Рим)">
+        <input type="text" id="inp-subject" placeholder="Предмет (например: История)">
+        <input type="text" id="inp-topic" placeholder="Тема (например: Древний Рим)">
         
         <div style="margin: 20px 0; border-top: 1px solid #e2e8f0; padding-top:10px;">
             <div id="terms-container"></div>
@@ -163,7 +210,10 @@
 
     <div id="screen-quiz" class="screen">
         <div class="progress-bar"><div class="progress-fill" id="quiz-progress"></div></div>
-        <div style="text-align: right; color: gray; margin-bottom: 5px;" id="question-count">1/10</div>
+        <div style="display:flex; justify-content:space-between; color:#94a3b8; font-size: 0.9rem; margin-bottom:5px;">
+            <span>Вопрос</span>
+            <span id="question-count">1/10</span>
+        </div>
         
         <div class="card" id="quiz-term">Термин</div>
         
@@ -175,8 +225,8 @@
 
     <div id="screen-stats" class="screen">
         <h2>Результат</h2>
-        <span class="big-score" id="final-score">0/10</span>
-        <p style="text-align: center; margin-bottom: 2rem;" id="final-percent">0%</p>
+        <span class="big-score" id="final-score">0</span>
+        <p style="text-align: center; margin-bottom: 2rem; color: #64748b;" id="final-percent">0% правильных ответов</p>
         <button class="btn btn-primary" onclick="app.showScreen('screen-home')">На главную</button>
     </div>
 </div>
@@ -184,19 +234,49 @@
 <script>
     const app = {
         data: JSON.parse(localStorage.getItem('studyAppDB')) || [],
-        quizState: {
-            questions: [],
-            currentIdx: 0,
-            score: 0
-        },
+        quizState: { questions: [], currentIdx: 0, score: 0 },
 
         init() {
             this.showScreen('screen-home');
         },
 
+        // --- УВЕДОМЛЕНИЯ (TOASTS) ---
+        notify(msg, type = 'success') {
+            const area = document.getElementById('notification-area');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerText = msg;
+            area.appendChild(toast);
+            
+            // Анимация входа
+            setTimeout(() => toast.classList.add('show'), 10);
+
+            // Удаление через 3 секунды
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 400); // Ждем конца анимации выхода
+            }, 3000);
+        },
+
+        // --- НАВИГАЦИЯ ---
         showScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
+            // Плавное скрытие текущего
+            document.querySelectorAll('.screen.active').forEach(s => {
+                s.style.opacity = '0';
+                s.style.transform = 'translateY(20px)';
+                setTimeout(() => s.classList.remove('active'), 300);
+            });
+
+            // Плавное появление нового
+            setTimeout(() => {
+                const next = document.getElementById(id);
+                next.classList.add('active');
+                // Небольшая задержка, чтобы CSS transition сработал
+                requestAnimationFrame(() => {
+                    next.style.opacity = '1';
+                    next.style.transform = 'translateY(0)';
+                });
+            }, 300);
         },
 
         // --- ЛОГИКА СОЗДАНИЯ ---
@@ -220,7 +300,7 @@
 
         saveData() {
             const subject = document.getElementById('inp-subject').value.trim();
-            constKPtopic = document.getElementById('inp-topic').value.trim();
+            const topic = document.getElementById('inp-topic').value.trim();
             const rows = document.querySelectorAll('.term-row');
             const terms = [];
 
@@ -230,27 +310,29 @@
                 if(t && d) terms.push({ t, d });
             });
 
-            if(!subject || !constKPtopic || terms.length < 2) {
-                alert('Пожалуйста, заполните предмет, тему и минимум 2 термина.');
+            if(!subject || !topic) {
+                this.notify('⚠️ Заполните название предмета и темы', 'error');
+                return;
+            }
+            if(terms.length < 2) {
+                this.notify('⚠️ Минимум 2 термина для создания', 'error');
                 return;
             }
 
-            // Добавляем в базу
-            this.data.push({ subject, topic: constKPtopic, terms });
+            this.data.push({ subject, topic, terms });
             localStorage.setItem('studyAppDB', JSON.stringify(this.data));
-            alert('Сохранено!');
+            this.notify('✅ База успешно сохранена!');
             this.showScreen('screen-home');
         },
 
         // --- ЛОГИКА ВЫБОРА ---
         goToSubjectSelection() {
             if(this.data.length === 0) {
-                alert('Сначала создайте хотя бы одну базу знаний!');
+                this.notify('📂 Сначала создайте базу знаний!', 'error');
                 return;
             }
             const list = document.getElementById('subjects-list');
             list.innerHTML = '';
-            // Получаем уникальные предметы
             const subjects = [...new Set(this.data.map(i => i.subject))];
             
             subjects.forEach(sub => {
@@ -267,14 +349,12 @@
             document.getElementById('selected-subject-display').innerText = subject;
             const list = document.getElementById('topics-list');
             list.innerHTML = '';
-            
-            // Фильтруем темы по предмету
             const topics = this.data.filter(i => i.subject === subject);
             
             topics.forEach(item => {
                 const btn = document.createElement('button');
                 btn.className = 'btn btn-outline';
-                btn.innerText = item.topic + ` (${item.terms.length} терм.)`;
+                btn.innerText = item.topic + ` (${item.terms.length} сл.)`;
                 btn.onclick = () => this.startQuiz(item);
                 list.appendChild(btn);
             });
@@ -283,21 +363,14 @@
 
         // --- ЛОГИКА ОБУЧЕНИЯ (КВИЗ) ---
         startQuiz(topicData) {
-            // Подготовка вопросов (10 шт или сколько есть)
-            let terms = [...topicData.terms];
-            // Перемешиваем исходный массив
-            terms.sort(() => Math.random() - 0.5);
-            
-            // Берем 10 штук, если меньше — повторяем, пока не наберется 10
+            let terms = [...topicData.terms].sort(() => Math.random() - 0.5);
             let questions = [];
-            while(questions.length < 10) {
-                questions = questions.concat(terms);
-            }
+            while(questions.length < 10) questions = questions.concat(terms);
             questions = questions.slice(0, 10);
 
             this.quizState = {
                 questions: questions,
-                allTerms: topicData.terms, // нужны для неверных вариантов
+                allTerms: topicData.terms,
                 currentIdx: 0,
                 score: 0
             };
@@ -310,7 +383,6 @@
             const state = this.quizState;
             const currentQ = state.questions[state.currentIdx];
             
-            // UI обновления
             document.getElementById('question-count').innerText = `${state.currentIdx + 1} / 10`;
             document.getElementById('quiz-progress').style.width = `${(state.currentIdx / 10) * 100}%`;
             document.getElementById('quiz-term').innerText = currentQ.t;
@@ -319,7 +391,6 @@
             const optionsDiv = document.getElementById('quiz-options');
             optionsDiv.innerHTML = '';
 
-            // Генерируем варианты (1 правильный + 4 неправильных)
             let options = [currentQ.d];
             let distractors = state.allTerms
                 .filter(t => t.d !== currentQ.d)
@@ -327,8 +398,7 @@
                 .sort(() => Math.random() - 0.5)
                 .slice(0, 4);
             
-            options = options.concat(distractors);
-            options.sort(() => Math.random() - 0.5); // Мешаем варианты местами
+            options = options.concat(distractors).sort(() => Math.random() - 0.5);
 
             options.forEach(optText => {
                 const btn = document.createElement('div');
@@ -340,19 +410,20 @@
         },
 
         handleAnswer(btn, selected, correct) {
-            // Блокируем все кнопки
             const allBtns = document.querySelectorAll('.option-btn');
             allBtns.forEach(b => b.classList.add('disabled'));
 
             if(selected === correct) {
                 btn.classList.add('correct');
                 this.quizState.score++;
+                // Вибрация (haptic feedback) если поддерживается
+                if(navigator.vibrate) navigator.vibrate(10); 
             } else {
                 btn.classList.add('wrong');
-                // Подсветить правильный
                 allBtns.forEach(b => {
                     if(b.innerText === correct) b.classList.add('correct');
                 });
+                if(navigator.vibrate) navigator.vibrate([50, 50, 50]); 
             }
             
             document.getElementById('btn-continue').style.display = 'block';
@@ -370,12 +441,16 @@
         showStats() {
             this.showScreen('screen-stats');
             const score = this.quizState.score;
-            document.getElementById('final-score').innerText = `${score} / 10`;
+            document.getElementById('final-score').innerText = `${score}/10`;
             document.getElementById('final-percent').innerText = `${score * 10}% правильных ответов`;
+            
+            // Запуск конфетти (упрощенный вариант через уведомление)
+            if(score >= 8) {
+                this.notify('🎉 Отличный результат!', 'success');
+            }
         }
     };
 
-    // Старт
     app.init();
 </script>
 
