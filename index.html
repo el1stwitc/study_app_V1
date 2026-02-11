@@ -4,16 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Учи Термины PRO</title>
-    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
     <style>
         :root {
             --primary: #2563eb;
             --bg: #f1f5f9;
-            --card-bg: #ffffff;
-            --text-main: #0f172a;
+            --card: #ffffff;
+            --text: #0f172a;
             --text-sub: #64748b;
             --success: #10b981;
             --error: #ef4444;
@@ -21,94 +19,88 @@
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, system-ui, sans-serif; }
-        
-        body { 
-            background: var(--bg); 
-            display: flex; align-items: center; justify-content: center; 
-            min-height: 100vh; padding: 15px; 
-        }
+        body { background: var(--bg); display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 15px; }
 
         .app-container {
             width: 100%; max-width: 400px; height: 85vh;
-            background: var(--card-bg); border-radius: var(--radius);
+            background: var(--card); border-radius: var(--radius);
             box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
             display: flex; flex-direction: column; overflow: hidden;
-            position: relative;
         }
 
-        /* Шапка со статусом */
+        /* --- ШАПКА СО СТАТУСОМ --- */
         .header {
-            padding: 20px; text-align: center; border-bottom: 1px solid #f1f5f9;
+            padding: 15px; text-align: center; border-bottom: 1px solid #f1f5f9;
+            display: flex; flex-direction: column; align-items: center; gap: 8px;
         }
-        .cloud-status {
+        .cloud-badge {
             display: inline-flex; align-items: center; gap: 6px;
-            padding: 4px 12px; border-radius: 20px; background: #f8fafc;
-            font-size: 12px; font-weight: 600; color: var(--text-sub);
+            padding: 5px 12px; border-radius: 20px; background: #f8fafc;
+            font-size: 12px; font-weight: 700; color: var(--text-sub);
+            border: 1px solid #e2e8f0;
         }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; }
-        .status-dot.online { background: var(--success); box-shadow: 0 0 8px var(--success); }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; transition: 0.3s; }
+        .dot.online { background: var(--success); box-shadow: 0 0 8px var(--success); }
 
-        /* Экраны */
+        /* --- ЭКРАНЫ --- */
         .screen { display: none; flex-direction: column; height: 100%; padding: 20px; overflow-y: auto; }
-        .screen.active { display: flex; animation: slideIn 0.3s ease; }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .screen.active { display: flex; animation: slideUp 0.3s ease; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 
-        h1 { font-size: 24px; font-weight: 800; color: var(--text-main); margin-bottom: 20px; }
+        h1 { font-size: 22px; font-weight: 800; color: var(--text); margin-bottom: 20px; text-align: center; }
 
-        /* Кнопки */
+        /* --- КНОПКИ --- */
         .btn {
             width: 100%; padding: 16px; margin: 8px 0; border: none; border-radius: 16px;
             font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.2s;
-            display: flex; align-items: center; justify-content: center; gap: 10px;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
         }
-        .btn:active { transform: scale(0.96); }
-        .btn-main { background: var(--primary); color: white; }
+        .btn:active { transform: scale(0.97); }
+        .btn-main { background: var(--primary); color: white; box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2); }
         .btn-alt { background: #eff6ff; color: var(--primary); }
-        .btn-gray { background: #f8fafc; color: var(--text-main); border: 1px solid #e2e8f0; }
+        .btn-gray { background: #f8fafc; color: var(--text); border: 1px solid #e2e8f0; }
 
-        /* Список тем (ИСПРАВЛЕНО НАЛОЖЕНИЕ) */
-        .topic-card {
-            background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px;
+        /* --- КАРТОЧКА БАЗЫ (ИСПРАВЛЕНО) --- */
+        .db-card {
+            background: #fff; border: 1px solid #e2e8f0; border-radius: 16px;
             padding: 16px; margin-bottom: 12px;
             display: flex; align-items: center; justify-content: space-between;
+            gap: 10px;
         }
-        .topic-info { flex: 1; min-width: 0; padding-right: 10px; }
-        .topic-info b { display: block; font-size: 16px; color: var(--text-main); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .topic-info span { font-size: 13px; color: var(--text-sub); }
-        .topic-btns { display: flex; gap: 8px; flex-shrink: 0; }
-        .icon-btn { width: 40px; height: 40px; border-radius: 12px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .db-info { flex: 1; min-width: 0; }
+        .db-info b { display: block; font-size: 16px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .db-info span { font-size: 13px; color: var(--text-sub); }
+        .db-actions { display: flex; gap: 8px; }
+        .action-btn { width: 40px; height: 40px; border-radius: 12px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; }
 
-        /* Квиз */
-        .quiz-card {
-            background: var(--primary); padding: 40px 20px; border-radius: 20px;
-            color: white; text-align: center; font-size: 24px; font-weight: 800; margin-bottom: 20px;
-        }
-        .option {
-            background: white; border: 2px solid #f1f5f9; padding: 16px; border-radius: 16px;
-            margin-bottom: 10px; cursor: pointer; font-weight: 600; transition: 0.2s;
-        }
-        .option.correct { background: var(--success) !important; color: white; border-color: var(--success); }
-        .option.wrong { background: var(--error) !important; color: white; border-color: var(--error); }
+        /* --- ФОРМА ВВОДА --- */
+        .input-group { margin-bottom: 15px; }
+        input { width: 100%; padding: 14px; border: 2px solid #f1f5f9; border-radius: 14px; font-size: 16px; margin-bottom: 8px; }
+        input:focus { border-color: var(--primary); outline: none; }
 
-        input { width: 100%; padding: 16px; margin-bottom: 12px; border: 2px solid #f1f5f9; border-radius: 14px; font-size: 16px; }
+        /* --- КВИЗ --- */
+        .q-card { background: var(--primary); padding: 40px 20px; border-radius: 20px; color: white; text-align: center; font-size: 22px; font-weight: 800; margin-bottom: 20px; }
+        .opt { background: white; border: 2px solid #f1f5f9; padding: 16px; border-radius: 16px; margin-bottom: 10px; cursor: pointer; font-weight: 600; text-align: center; }
+        .opt.correct { background: var(--success) !important; color: white; border-color: var(--success); }
+        .opt.wrong { background: var(--error) !important; color: white; border-color: var(--error); }
     </style>
 </head>
 <body>
 
 <div class="app-container">
     <div class="header">
-        <div class="cloud-status">
-            <div id="dot" class="status-dot"></div>
-            <span id="status-text">Загрузка...</span>
+        <div class="cloud-badge">
+            <div id="cloud-dot" class="dot"></div>
+            <span id="cloud-text">Соединение...</span>
         </div>
     </div>
 
     <div id="home" class="screen active">
-        <h1 style="text-align: center;">🎓 Учи Термины</h1>
+        <h1>🎓 Учи Термины</h1>
         <button class="btn btn-main" onclick="app.nav('subjects', 'quiz')">Начать обучение</button>
         <button class="btn btn-alt" onclick="app.nav('create')">Создать базу</button>
         <button class="btn btn-gray" onclick="app.showDB()">🗂️ Моя база</button>
-        <button class="btn btn-gray" onclick="app.nav('subjects', 'stats')" style="background:#e0e7ff; color:#4338ca; border:none;">📊 Статистика</button>
+        <button class="btn btn-gray" onclick="app.nav('subjects', 'stats')" style="background:#e0e7ff; border:none; color:#4338ca;">📊 Статистика</button>
     </div>
 
     <div id="manage" class="screen">
@@ -118,35 +110,37 @@
     </div>
 
     <div id="create" class="screen">
-        <h1 id="create-h">Новая тема</h1>
-        <input type="text" id="in-sub" placeholder="Предмет">
-        <input type="text" id="in-top" placeholder="Тема">
-        <div id="terms-area"></div>
-        <button class="btn btn-gray" onclick="app.addRow()">+ Термин</button>
-        <button class="btn btn-main" onclick="app.save()">Сохранить</button>
+        <h1 id="create-title">Новая тема</h1>
+        <input type="text" id="in-sub" placeholder="Предмет (напр. История)">
+        <input type="text" id="in-top" placeholder="Тема (напр. Рим)">
+        <div id="terms-list"></div>
+        <button class="btn btn-gray" onclick="app.addRow()">+ Добавить слово</button>
+        <button class="btn btn-main" onclick="app.save()">Сохранить в облако</button>
         <button class="btn btn-gray" onclick="app.nav('home')">Отмена</button>
     </div>
 
     <div id="quiz" class="screen">
-        <div id="q-card" class="quiz-card">...</div>
+        <div id="q-text" class="q-card">...</div>
         <div id="q-options"></div>
-        <button id="btn-next" class="btn btn-main" style="display:none" onclick="app.nextQ()">Продолжить</button>
+        <button id="q-next" class="btn btn-main" style="display:none" onclick="app.nextQ()">Продолжить</button>
     </div>
 
-    <div id="subjects" class="screen"><h1>Предметы</h1><div id="sub-list"></div><button class="btn btn-gray" onclick="app.nav('home')">Назад</button></div>
-    <div id="topics" class="screen"><h1>Темы</h1><div id="top-list"></div><button class="btn btn-gray" onclick="app.nav('subjects')">Назад</button></div>
+    <div id="subjects" class="screen"><h1>Предметы</h1><div id="sub-btns"></div><button class="btn btn-gray" onclick="app.nav('home')">Назад</button></div>
+    <div id="topics" class="screen"><h1>Темы</h1><div id="top-btns"></div><button class="btn btn-gray" onclick="app.nav('subjects')">Назад</button></div>
     
-    <div id="stats-view" class="screen">
-        <h1 id="st-title">Прогресс</h1>
-        <canvas id="chart"></canvas>
+    <div id="stats" class="screen">
+        <h1 id="st-topic">Прогресс</h1>
+        <div style="background: #fff; padding: 10px; border-radius: 15px; border: 1px solid #f1f5f9;">
+            <canvas id="chart"></canvas>
+        </div>
         <button class="btn btn-gray" style="margin-top:20px" onclick="app.nav('home')">В меню</button>
     </div>
 </div>
 
 <script>
-    const S_URL = 'https://irrxjckolvcktxigneaq.supabase.co';
-    const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlycnhqY2tvbHZja3R4aWduZWFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MTczNjgsImV4cCI6MjA4NjM5MzM2OH0.3Xa99p5pQO5vhQmtL9ucbazwpsqdVjKqmtraxWl0Rws';
-    const sb = window.supabase.createClient(S_URL, S_KEY);
+    const URL = 'https://irrxjckolvcktxigneaq.supabase.co';
+    const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlycnhqY2tvbHZja3R4aWduZWFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MTczNjgsImV4cCI6MjA4NjM5MzM2OH0.3Xa99p5pQO5vhQmtL9ucbazwpsqdVjKqmtraxWl0Rws';
+    const sb = window.supabase.createClient(URL, KEY);
 
     const app = {
         data: [], mode: '', editId: null, chart: null,
@@ -157,8 +151,10 @@
             const { data, error } = await sb.from('study_sets').select('*').order('created_at', {ascending: false});
             if(!error) {
                 this.data = data;
-                document.getElementById('dot').classList.add('online');
-                document.getElementById('status-text').innerText = 'Облако активно';
+                document.getElementById('cloud-dot').classList.add('online');
+                document.getElementById('cloud-text').innerText = 'Облако активно';
+            } else {
+                document.getElementById('cloud-text').innerText = 'Ошибка сети';
             }
         },
 
@@ -170,68 +166,67 @@
         },
 
         renderSubs() {
-            const container = document.getElementById('sub-list'); container.innerHTML = '';
+            const div = document.getElementById('sub-btns'); div.innerHTML = '';
             [...new Set(this.data.map(x => x.subject))].forEach(s => {
                 const b = document.createElement('button'); b.className = 'btn btn-alt'; b.innerText = s;
-                b.onclick = () => this.renderTops(s); container.appendChild(b);
+                b.onclick = () => this.renderTops(s); div.appendChild(b);
             });
         },
 
         renderTops(s) {
-            const container = document.getElementById('top-list'); container.innerHTML = '';
+            const div = document.getElementById('top-btns'); div.innerHTML = '';
             this.data.filter(x => x.subject === s).forEach(t => {
                 const b = document.createElement('button'); b.className = 'btn btn-alt'; b.innerText = t.topic;
-                b.onclick = () => this.mode === 'quiz' ? this.startQuiz(t) : this.showChart(t);
-                container.appendChild(b);
+                b.onclick = () => this.mode === 'quiz' ? this.startQuiz(t) : this.showStats(t);
+                div.appendChild(b);
             });
             this.nav('topics');
         },
 
         showDB() {
             const list = document.getElementById('db-list'); list.innerHTML = '';
-            this.data.forEach(item => {
-                const div = document.createElement('div'); div.className = 'topic-card';
-                div.innerHTML = `
-                    <div class="topic-info"><b>${item.topic}</b><span>${item.subject}</span></div>
-                    <div class="topic-btns">
-                        <button class="icon-btn" style="background:#dcfce7" onclick="app.edit('${item.id}')">✏️</button>
-                        <button class="icon-btn" style="background:#fee2e2" onclick="app.del('${item.id}')">🗑️</button>
+            this.data.forEach(i => {
+                const card = document.createElement('div'); card.className = 'db-card';
+                card.innerHTML = `
+                    <div class="db-info"><b>${i.topic}</b><span>${i.subject}</span></div>
+                    <div class="db-actions">
+                        <button class="action-btn" style="background:#dcfce7" onclick="app.edit('${i.id}')">✏️</button>
+                        <button class="action-btn" style="background:#fee2e2" onclick="app.del('${i.id}')">🗑️</button>
                     </div>`;
-                list.appendChild(div);
+                list.appendChild(card);
             });
             this.nav('manage');
         },
 
-        // Остальная логика квиза и сохранения...
         addRow(t='', d='') {
-            const div = document.createElement('div'); div.style.display='flex'; div.style.gap='5px';
-            div.innerHTML = `<input type="text" class="t" placeholder="Слово" value="${t}"><input type="text" class="d" placeholder="Определение" value="${d}">`;
-            document.getElementById('terms-area').appendChild(div);
+            const div = document.createElement('div'); div.style.display='flex'; div.style.gap='8px';
+            div.innerHTML = `<input type="text" class="t" placeholder="Термин" value="${t}"><input type="text" class="d" placeholder="Определение" value="${d}">`;
+            document.getElementById('terms-list').appendChild(div);
         },
 
         async save() {
-            const s = document.getElementById('in-sub').value;
-            const t = document.getElementById('in-top').value;
-            const terms = Array.from(document.querySelectorAll('#terms-area div')).map(d => ({
+            const sub = document.getElementById('in-sub').value;
+            const top = document.getElementById('in-top').value;
+            const terms = Array.from(document.querySelectorAll('#terms-list div')).map(d => ({
                 t: d.querySelector('.t').value, d: d.querySelector('.d').value
             })).filter(x => x.t && x.d);
 
-            if(this.editId) await sb.from('study_sets').update({subject:s, topic:t, terms}).eq('id', this.editId);
-            else await sb.from('study_sets').insert([{subject:s, topic:t, terms}]);
+            if(this.editId) await sb.from('study_sets').update({subject:sub, topic:top, terms}).eq('id', this.editId);
+            else await sb.from('study_sets').insert([{subject:sub, topic:top, terms}]);
             
             await this.load(); this.nav('home');
         },
-
-        async del(id) { if(confirm('Удалить?')) { await sb.from('study_sets').delete().eq('id', id); await this.load(); this.showDB(); } },
 
         edit(id) {
             const item = this.data.find(x => x.id == id); this.editId = id;
             document.getElementById('in-sub').value = item.subject;
             document.getElementById('in-top').value = item.topic;
-            document.getElementById('terms-area').innerHTML = '';
+            document.getElementById('terms-list').innerHTML = '';
             item.terms.forEach(tr => this.addRow(tr.t, tr.d));
             this.nav('create');
-        }
+        },
+
+        async del(id) { if(confirm('Удалить тему?')) { await sb.from('study_sets').delete().eq('id', id); await this.load(); this.showDB(); } }
     };
 
     window.onload = () => app.init();
