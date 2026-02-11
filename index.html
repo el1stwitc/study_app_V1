@@ -89,6 +89,38 @@
             font-size: 16px;
         }
 
+        /* СТИЛИ КАРТОЧКИ И ОПЦИЙ */
+        .card {
+            background: #eff6ff;
+            padding: 2rem;
+            border-radius: var(--radius);
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            border: 1px solid #dbeafe;
+        }
+
+        .option-btn {
+            background: white;
+            border: 2px solid #f1f5f9;
+            padding: 14px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+            animation: slideUp 0.3s ease forwards;
+        }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .option-btn.correct { background: var(--success); color: white; border-color: var(--success); }
+        .option-btn.wrong { background: var(--error); color: white; border-color: var(--error); }
+        .disabled { pointer-events: none; }
+
+        .progress-bar { height: 6px; background: #f1f5f9; border-radius: 10px; margin-bottom: 20px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: 0.4s; }
+
         .toast {
             position: fixed;
             top: 20px;
@@ -99,7 +131,7 @@
             padding: 12px 20px;
             border-radius: 50px;
             z-index: 1000;
-            transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: 0.4s;
         }
         .toast.show { transform: translate(-50%, 0); }
     </style>
@@ -111,7 +143,7 @@
 <div class="container">
     <div id="screen-home" class="screen active" style="display: block; opacity: 1; transform: translateX(0);">
         <h1>🎓 Учи Термины</h1>
-        <p id="cloud-status" style="text-align:center; color:gray; font-size:0.8rem; margin-bottom: 20px;">Проверка связи...</p>
+        <p id="cloud-status" style="text-align:center; color:gray; font-size:0.8rem; margin-bottom: 20px;">Загрузка данных...</p>
         <button class="btn btn-primary" onclick="app.goToSubjectSelection()">Начать обучение</button>
         <button class="btn btn-outline" onclick="app.goToCreate()">Создать базу</button>
     </div>
@@ -121,7 +153,7 @@
         <input type="text" id="inp-subject" placeholder="Предмет">
         <input type="text" id="inp-topic" placeholder="Тема">
         <div id="terms-container"></div>
-        <button class="btn btn-secondary" onclick="app.addTermRow()">+ Добавить поле</button>
+        <button class="btn btn-secondary" onclick="app.addTermRow()">+ Еще поле</button>
         <button class="btn btn-primary" id="btn-save" onclick="app.saveData()">Сохранить в облако</button>
         <button class="btn btn-outline" onclick="app.switchScreen('screen-home')">Назад</button>
     </div>
@@ -137,58 +169,49 @@
         <div id="topics-list"></div>
         <button class="btn btn-outline" onclick="app.switchScreen('screen-select-subject')">Назад</button>
     </div>
+
+    <div id="screen-quiz" class="screen">
+        <div class="progress-bar"><div class="progress-fill" id="quiz-progress"></div></div>
+        <div class="card" id="quiz-term">Термин</div>
+        <div id="quiz-options"></div>
+        <button id="btn-continue" class="btn btn-primary" style="display:none;" onclick="app.nextQuestion()">Далее</button>
+    </div>
+
+    <div id="screen-stats" class="screen">
+        <h2>Результат</h2>
+        <div style="font-size: 5rem; text-align:center; font-weight:900; color:var(--primary); margin: 1rem 0;" id="final-score">0</div>
+        <p id="final-percent" style="text-align:center; color:gray; margin-bottom:2rem;"></p>
+        <button class="btn btn-primary" onclick="app.switchScreen('screen-home')">К предметам</button>
+    </div>
 </div>
 
 <script>
-    // --- ПЕРЕД ЗАПУСКОМ ВСТАВЬ КЛЮЧИ ТУТ ---
     const SUPABASE_URL = 'https://irrxjckolvcktxigneaq.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlycnhqY2tvbHZja3R4aWduZWFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MTczNjgsImV4cCI6MjA4NjM5MzM2OH0.3Xa99p5pQO5vhQmtL9ucbazwpsqdVjKqmtraxWl0Rws';
 
-    let sb = null;
+    let sb = (window.supabase)?.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     const app = {
         data: [],
+        quiz: { q: [], cur: 0, score: 0, allTerms: [] },
 
-        init() {
-            console.log("App init...");
-            // Пробуем подключить базу
-            try {
-                if (window.supabase) {
-                    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                    this.load();
-                } else {
-                    document.getElementById('cloud-status').innerText = 'Ошибка: библиотека не загружена';
-                }
-            } catch (e) {
-                console.error(e);
-            }
+        async init() {
+            if (sb) this.load();
         },
 
         async load() {
-            if (!sb) return;
             const { data, error } = await sb.from('study_sets').select('*').order('created_at', { ascending: false });
             if (!error) {
                 this.data = data;
-                document.getElementById('cloud-status').innerText = 'Облако подключено ☁️';
-                this.notify('Данные загружены');
-            } else {
-                document.getElementById('cloud-status').innerText = 'Ошибка доступа к таблице';
+                document.getElementById('cloud-status').innerText = 'Облако активно ☁️';
             }
         },
 
         switchScreen(id) {
-            console.log("Switching to:", id);
             const screens = document.querySelectorAll('.screen');
-            screens.forEach(s => {
-                s.classList.remove('active');
-                s.style.display = 'none';
-            });
-            
+            screens.forEach(s => { s.classList.remove('active'); s.style.display = 'none'; });
             const next = document.getElementById(id);
-            if (next) {
-                next.style.display = 'block';
-                setTimeout(() => next.classList.add('active'), 50);
-            }
+            if (next) { next.style.display = 'block'; setTimeout(() => next.classList.add('active'), 50); }
         },
 
         goToCreate() {
@@ -199,9 +222,8 @@
 
         addTermRow() {
             const div = document.createElement('div');
-            div.style.display = 'flex';
-            div.style.gap = '5px';
-            div.innerHTML = `<input type="text" class="t" placeholder="Термин" style="flex:1"><input type="text" class="d" placeholder="Определение" style="flex:1">`;
+            div.style.display = 'flex'; div.style.gap = '5px';
+            div.innerHTML = `<input type="text" class="t" placeholder="Слово" style="flex:1"><input type="text" class="d" placeholder="Определение" style="flex:1">`;
             document.getElementById('terms-container').appendChild(div);
         },
 
@@ -213,16 +235,10 @@
                 d: row.querySelector('.d').value.trim()
             })).filter(x => x.t && x.d);
 
-            if (!sub || !top || terms.length < 1) {
-                this.notify('Заполните поля!');
-                return;
-            }
-
-            if (!sb) return this.notify('Нет связи с базой!', true);
+            if (!sub || !top || terms.length < 2) return this.notify('Минимум 2 термина!', true);
 
             const btn = document.getElementById('btn-save');
-            btn.disabled = true;
-            btn.innerText = 'Сохранение...';
+            btn.disabled = true; btn.innerText = 'Сохранение...';
 
             const { error } = await sb.from('study_sets').insert([{ subject: sub, topic: top, terms }]);
             
@@ -230,21 +246,17 @@
                 this.notify('Успешно сохранено!');
                 await this.load();
                 this.switchScreen('screen-home');
-            } else {
-                this.notify('Ошибка записи в БД', true);
             }
-            btn.disabled = false;
-            btn.innerText = 'Сохранить в облако';
+            btn.disabled = false; btn.innerText = 'Сохранить в облако';
         },
 
         goToSubjectSelection() {
-            if (this.data.length === 0) return this.notify('База данных пуста!');
+            if (!this.data.length) return this.notify('База пуста!', true);
             const list = document.getElementById('subjects-list');
             list.innerHTML = '';
             [...new Set(this.data.map(x => x.subject))].forEach(s => {
                 const b = document.createElement('button');
-                b.className = 'btn btn-outline';
-                b.innerText = s;
+                b.className = 'btn btn-outline'; b.innerText = s;
                 b.onclick = () => this.goToTopicSelection(s);
                 list.appendChild(b);
             });
@@ -256,26 +268,79 @@
             list.innerHTML = '';
             this.data.filter(x => x.subject === subject).forEach(item => {
                 const b = document.createElement('button');
-                b.className = 'btn btn-outline';
-                b.innerText = item.topic;
-                b.onclick = () => alert('Тут будет квиз!'); // Упростил для теста кнопок
+                b.className = 'btn btn-outline'; b.innerText = item.topic;
+                b.onclick = () => this.startQuiz(item);
                 list.appendChild(b);
             });
             this.switchScreen('screen-select-topic');
         },
 
+        startQuiz(item) {
+            let terms = [...item.terms].sort(() => Math.random() - 0.5);
+            let questions = [];
+            while(questions.length < 10) questions = questions.concat(terms);
+            
+            this.quiz = { 
+                q: questions.slice(0, 10), 
+                allTerms: item.terms, 
+                cur: 0, 
+                score: 0 
+            };
+            this.switchScreen('screen-quiz');
+            this.renderQ();
+        },
+
+        renderQ() {
+            const cur = this.quiz.q[this.quiz.cur];
+            document.getElementById('quiz-term').innerText = cur.t;
+            document.getElementById('quiz-progress').style.width = (this.quiz.cur / 10 * 100) + '%';
+            document.getElementById('btn-continue').style.display = 'none';
+
+            const optBox = document.getElementById('quiz-options');
+            optBox.innerHTML = '';
+
+            // Генерируем варианты (правильный + 3 случайных)
+            let opts = [cur.d];
+            let others = this.quiz.allTerms.filter(x => x.d !== cur.d).map(x => x.d);
+            opts = opts.concat(others.sort(() => Math.random() - 0.5).slice(0, 3)).sort(() => Math.random() - 0.5);
+
+            opts.forEach(o => {
+                const b = document.createElement('div');
+                b.className = 'option-btn'; b.innerText = o;
+                b.onclick = () => this.check(b, o, cur.d);
+                optBox.appendChild(b);
+            });
+        },
+
+        check(btn, sel, cor) {
+            document.querySelectorAll('.option-btn').forEach(b => b.classList.add('disabled'));
+            if(sel === cor) {
+                btn.classList.add('correct'); this.quiz.score++;
+            } else {
+                btn.classList.add('wrong');
+                document.querySelectorAll('.option-btn').forEach(b => { if(b.innerText === cor) b.classList.add('correct'); });
+            }
+            document.getElementById('btn-continue').style.display = 'block';
+        },
+
+        nextQuestion() {
+            this.quiz.cur++;
+            if(this.quiz.cur < 10) this.renderQ();
+            else {
+                document.getElementById('final-score').innerText = this.quiz.score + '/10';
+                document.getElementById('final-percent').innerText = (this.quiz.score * 10) + '% успеха';
+                this.switchScreen('screen-stats');
+            }
+        },
+
         notify(msg, err = false) {
             const t = document.getElementById('toast');
-            t.innerText = msg;
-            t.style.background = err ? 'var(--error)' : '#1e293b';
-            t.classList.add('show');
-            setTimeout(() => t.classList.remove('show'), 2500);
+            t.innerText = msg; t.style.background = err ? 'var(--error)' : '#1e293b';
+            t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000);
         }
     };
 
-    // Запуск
     window.onload = () => app.init();
 </script>
-
 </body>
 </html>
